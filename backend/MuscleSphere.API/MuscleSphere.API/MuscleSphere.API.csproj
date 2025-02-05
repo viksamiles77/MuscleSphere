@@ -14,11 +14,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.12" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MuscleSphere.DataAccess\MuscleSphere.DataAccess.csproj" />
+    <ProjectReference Include="..\MuscleSphere.DTO\MuscleSphere.DTO.csproj" />
     <ProjectReference Include="..\MuscleSphere.Services\MuscleSphere.Services.csproj" />
   </ItemGroup>
 
