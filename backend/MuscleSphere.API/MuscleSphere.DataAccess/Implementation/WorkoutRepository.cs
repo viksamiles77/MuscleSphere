@@ -12,10 +12,17 @@ namespace MuscleSphere.DataAccess.Implementation
         {
             _context = context;
         }
+        public async Task<Workout> GetWorkoutByIdAsync(Guid workoutId)
+        {
+            return await _context.Workouts
+                .Include(w => w.Exercises)
+                .FirstOrDefaultAsync(w => w.Id == workoutId);
+        }
 
         public async Task<List<Workout>> GetUserWorkoutsAsync(string userId)
         {
             return await _context.Workouts
+                .Include(w => w.Exercises)
                 .Where(w => w.UserId == userId)
                 .ToListAsync();
         }
