@@ -6,6 +6,8 @@ using MuscleSphere.DataAccess;
 using MuscleSphere.DataAccess.Implementation;
 using MuscleSphere.DataAccess.Interfaces;
 using MuscleSphere.DomainModels.Entities;
+using MuscleSphere.Services.Implementation;
+using MuscleSphere.Services.Interfaces;
 using System.Text;
 
 namespace MuscleSphere.API
@@ -51,11 +53,14 @@ namespace MuscleSphere.API
             builder.Services.AddSwaggerGen();
 
             // Add DbContext
-            builder.Services.AddDbContext<ApplicationDbContext>(options => 
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Register the repository
             builder.Services.AddScoped<IWorkoutRepository, WorkoutRepository>();
+            builder.Services.AddScoped<IWorkoutRepository, WorkoutRepository>();
+            builder.Services.AddScoped<IWorkoutService, WorkoutService>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
 
             var app = builder.Build();
 
