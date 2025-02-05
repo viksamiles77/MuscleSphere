@@ -1,10 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using MuscleSphere.DomainModels.Entities;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+﻿using Microsoft.AspNetCore.Mvc;
+using MuscleSphere.DTO.Authentication;
+using MuscleSphere.Services.Interfaces;
 
 namespace MuscleSphere.API.Controllers
 {
@@ -12,78 +8,37 @@ namespace MuscleSphere.API.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly UserManager<User> _userManager;
-        private readonly SignInManager<User> _signInManager;
-        private readonly IConfiguration _configuration;
+        private readonly IAuthService _authService;
 
-        public AuthController(
-            UserManager<User> usermanager,
-            SignInManager<User> signInManager,
-            IConfiguration configuration)
+        public AuthController(IAuthService authService)
         {
-            _userManager = usermanager;
-            _signInManager = signInManager;
-            _configuration = configuration;
+            _authService = authService;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterModel model)
+        public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
         {
-            var user = new User { UserName = model.Email, Email = model.Email };
-            var result = await _userManager.CreateAsync(user, model.Password);
+            var response = await _authService.RegisterAsync(registerDto);
 
-            if (result.Succeeded)
+            if (response.Message == "User created successfully!")
             {
-                return Ok(new { Message = "User created successfully!" });
+                return Ok(response);
             }
-            return BadRequest(result.Errors);
+
+            return BadRequest(response);
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginModel model)
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, false);
+            var response = await _authService.LoginAsync(loginDto);
 
-            if (result.Succeeded)
+            if (response.Token != null)
             {
-                var user = await _userManager.FindByEmailAsync(model.Email);
-                var token = GenerateJwtToken(user);
-                return Ok(new { Token = token });
+                return Ok(response);
             }
-            return Unauthorized();
-        }
-        private string GenerateJwtToken(User user)
-        {
-            var claims = new[]
-            {
-            new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.NameIdentifier, user.Id)
-        };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return Unauthorized(response);
         }
     }
-}
-public class RegisterModel
-{
-    public string Email { get; set; }
-    public string Password { get; set; }
-}
-
-public class LoginModel
-{
-    public string Email { get; set; }
-    public string Password { get; set; }
 }
