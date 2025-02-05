@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MuscleSphere.DataAccess.Interfaces;
-using MuscleSphere.DomainModels.Entities;
+using MuscleSphere.DTO.Workout;
+using MuscleSphere.Services.Interfaces;
 using System.Security.Claims;
 
 namespace MuscleSphere.API.Controllers
@@ -11,46 +11,55 @@ namespace MuscleSphere.API.Controllers
     [Route("api/[controller]")]
     public class WorkoutsController : ControllerBase
     {
-        private readonly IWorkoutRepository _workoutRepository;
+        private readonly IWorkoutService _workoutService;
 
-        public WorkoutsController(IWorkoutRepository workoutRepository)
+        public WorkoutsController(IWorkoutService workoutService)
         {
-            _workoutRepository = workoutRepository;
+            _workoutService = workoutService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetWorkouts()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var workouts = await _workoutRepository.GetUserWorkoutsAsync(userId);
+            if (userId == null)
+                return Unauthorized();
+
+            var workouts = await _workoutService.GetUserWorkoutsAsync(userId);
             return Ok(workouts);
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddWorkout([FromBody] Workout workout)
+        public async Task<IActionResult> AddWorkout([FromBody] WorkoutDto workoutDto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            workout.UserId = userId;
-            await _workoutRepository.AddWorkoutAsync(workout);
+            if (userId == null)
+                return Unauthorized();
+
+            var workout = await _workoutService.AddWorkoutAsync(userId, workoutDto);
             return Ok(workout);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateWorkout([FromBody] Workout workout)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateWorkout(Guid id, [FromBody] WorkoutDto workoutDto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            workout.UserId = userId;
-            await _workoutRepository.UpdateWorkoutAsync(workout);
+            if (userId == null)
+                return Unauthorized();
+
+            var workout = await _workoutService.UpdateWorkoutAsync(id, userId, workoutDto);
             return Ok(workout);
         }
 
-        [HttpDelete]
-        public async Task<IActionResult> DeleteWorkout([FromBody] Workout workout)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteWorkout(Guid id)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            workout.UserId = userId;
-            await _workoutRepository.DeleteWorkoutAsync(workout);
-            return Ok();
+            if (userId == null)
+                return Unauthorized();
+
+            await _workoutService.DeleteWorkoutAsync(id, userId);
+            return NoContent();
         }
     }
 }
